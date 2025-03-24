@@ -1,0 +1,21 @@
+name: Deploy Yandex Cloud Function
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  deploy:
+    uses: iperevoschikov/YandexCloudFunctions.Net.Sdk/.github/workflows/yc-cloud-function-ci-template.yml@main
+    with:
+      yc-bucket-name: "mtg-aetherhub-elo-sources"
+      yc-folder-id: "b1ghjemjicrojm2tmnfc"
+      yc-service-account-id: "aje8bq8bpjcvkf9k73jp"
+      yc-function-id: "d4e7olk0agsrmnl5jfkf"
+      yc-function-entrypoint: "AetherhubEloFunctions.TelegramWebhookFunction"
+      dotnet-project-name: "AetherhubEloFunctions"
+    secrets:
+      YC_OAUTH_TOKEN: ${{ secrets.YC_OAUTH_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
