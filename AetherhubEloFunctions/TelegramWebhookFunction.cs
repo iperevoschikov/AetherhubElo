@@ -16,7 +16,7 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         FirestoreDb firestoreDb,
         ILogger<TelegramWebhookFunction> logger)
     {
-        var update = JsonSerializer.Deserialize<Update>(request.body)!;
+        var update = JsonSerializer.Deserialize<Update>(request.body, JsonSerializerOptions)!;
         logger.LogInformation("Received update {update}", JsonSerializer.Serialize(update));
 
         var message = update.Message;
@@ -76,4 +76,9 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
 
         return value;
     }
+
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+    };
 }
