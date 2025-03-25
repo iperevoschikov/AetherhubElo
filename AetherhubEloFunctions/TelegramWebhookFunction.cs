@@ -14,7 +14,7 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         ITelegramBotClient botClient,
         FirestoreDb firestoreDb)
     {
-        var update = JsonConvert.DeserializeObject<Update>(request.Body)!;
+        var update = JsonConvert.DeserializeObject<Update>(request.body)!;
         var message = update.Message;
         if (message?.Text != null)
         {
