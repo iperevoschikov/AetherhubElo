@@ -33,6 +33,12 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
                     message.Chat.Id,
                     string.Join('\n', communixes));
             }
+            else
+            {
+                await botClient.SendMessage(
+                    message.Chat.Id,
+                    $"Неизвестная команда {message.Text}");
+            }
         }
 
         return FunctionHandlerResponses.Ok();
