@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using YandexCloudFunctions.Net.Sdk;
@@ -12,9 +13,12 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
     private static async Task<FunctionHandlerResponse> HandleAsync(
         FunctionHandlerRequest request,
         ITelegramBotClient botClient,
-        FirestoreDb firestoreDb)
+        FirestoreDb firestoreDb,
+        ILogger<TelegramWebhookFunction> logger)
     {
         var update = JsonSerializer.Deserialize<Update>(request.body)!;
+        logger.LogInformation("Received update {update}", JsonSerializer.Serialize(update));
+
         var message = update.Message;
         if (message?.Text != null)
         {
