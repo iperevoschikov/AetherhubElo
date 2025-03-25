@@ -7,10 +7,9 @@ using YandexCloudFunctions.Net.Sdk;
 
 namespace AetherhubEloFunctions;
 
-public class TelegramWebhookFunction : BaseFunctionHandler
+public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
 {
-    // ReSharper disable once UnusedMember.Global
-    public static async Task<FunctionHandlerResponse> HandleAsync(
+    private static async Task<FunctionHandlerResponse> HandleAsync(
         FunctionHandlerRequest request,
         ITelegramBotClient botClient,
         FirestoreDb firestoreDb)

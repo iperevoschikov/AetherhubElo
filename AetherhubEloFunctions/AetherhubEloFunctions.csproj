@@ -10,7 +10,7 @@
       <PackageReference Include="Google.Cloud.Firestore" Version="3.10.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.3" />
       <PackageReference Include="Telegram.Bot" Version="22.4.4" />
-      <PackageReference Include="yandexcloudfunctions.net.sdk" Version="0.0.7" />
+      <PackageReference Include="yandexcloudfunctions.net.sdk" Version="0.0.8" />
     </ItemGroup>
 
 </Project>
