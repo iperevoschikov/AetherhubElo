@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using YandexCloudFunctions.Net.Sdk;
 
 namespace AetherhubEloFunctions;
@@ -13,7 +14,7 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
     private static async Task<FunctionHandlerResponse> HandleAsync(
         FunctionHandlerRequest request,
         ITelegramBotClient botClient,
-        FirestoreDb firestoreDb,
+        CommunixesStorage communixesStorage,
         ILogger<TelegramWebhookFunction> logger)
     {
         var update = JsonConvert.DeserializeObject<Update>(request.body)!;
@@ -22,26 +23,28 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         var message = update.Message;
         if (message?.Text != null)
         {
-            if (message.Text.StartsWith("/communixes"))
+            switch (message.Text)
             {
-                var documents = firestoreDb
-                    .Collection("communixes")
-                    .ListDocumentsAsync();
-                var communixes = new List<string>();
-                await foreach (var document in documents)
-                {
-                    communixes.Add((await document.GetSnapshotAsync()).GetValue<string>("name"));
-                }
-
-                await botClient.SendTextMessageAsync(
-                    message.Chat.Id,
-                    string.Join('\n', communixes));
-            }
-            else
-            {
-                await botClient.SendTextMessageAsync(
-                    message.Chat.Id,
-                    $"Неизвестная команда {message.Text}");
+                case "/rating":
+                    break;
+                case "/addresults":
+                    var communixes = await communixesStorage.GetAll();
+                    await botClient.SendTextMessageAsync(
+                        message.Chat.Id,
+                        "Выбери комуникс",
+                        replyMarkup: new InlineKeyboardMarkup(
+                            communixes.Select(c =>
+                                    InlineKeyboardButton.WithCallbackData(c.Name, c.Id))
+                                .ToArray()));
+                    break;
+                case "/start":
+                case "/help":
+                default:
+                    await botClient.SendTextMessageAsync(
+                        message.Chat.Id,
+                        "Это бот для подсчета рейтинга игроков MTG на локальных турнирах.\n" +
+                        "Чтобы добавить результаты турнира или посмотреть рейтинг, воспользуйтесь соответствующей командой.");
+                    break;
             }
         }
 
@@ -64,6 +67,7 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
                         JsonCredentials = googleCloudJsonCredentials,
                     }
                     .Build())
+            .AddSingleton<CommunixesStorage>()
             .AddSingleton<ITelegramBotClient>(new TelegramBotClient(telegramAccessToken));
     }
 
