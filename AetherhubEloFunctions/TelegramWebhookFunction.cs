@@ -1,7 +1,7 @@
-﻿using System.Text.Json;
-using Google.Cloud.Firestore;
+﻿using Google.Cloud.Firestore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using YandexCloudFunctions.Net.Sdk;
@@ -16,8 +16,8 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         FirestoreDb firestoreDb,
         ILogger<TelegramWebhookFunction> logger)
     {
-        var update = JsonSerializer.Deserialize<Update>(request.body, JsonSerializerOptions)!;
-        logger.LogInformation("Received update {update}", JsonSerializer.Serialize(update));
+        var update = JsonConvert.DeserializeObject<Update>(request.body)!;
+        logger.LogInformation("Received update {update}", System.Text.Json.JsonSerializer.Serialize(update));
 
         var message = update.Message;
         if (message?.Text != null)
@@ -33,13 +33,13 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
                     communixes.Add((await document.GetSnapshotAsync()).GetValue<string>("name"));
                 }
 
-                await botClient.SendMessage(
+                await botClient.SendTextMessageAsync(
                     message.Chat.Id,
                     string.Join('\n', communixes));
             }
             else
             {
-                await botClient.SendMessage(
+                await botClient.SendTextMessageAsync(
                     message.Chat.Id,
                     $"Неизвестная команда {message.Text}");
             }
@@ -76,9 +76,4 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
 
         return value;
     }
-
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-    };
 }
