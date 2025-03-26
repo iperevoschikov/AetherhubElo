@@ -15,6 +15,7 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         FunctionHandlerRequest request,
         ITelegramBotClient botClient,
         CommunixesStorage communixesStorage,
+        UsersStorage usersStorage,
         ILogger<TelegramWebhookFunction> logger)
     {
         var update = JsonConvert.DeserializeObject<Update>(request.body)!;
@@ -23,55 +24,82 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         var message = update.Message;
         var callbackQuery = update.CallbackQuery;
 
-        if (callbackQuery != null)
+        if (callbackQuery is { Data: not null })
         {
-            if (callbackQuery.Message!.Text == "Выбери комуникс")
+            var state = await usersStorage.GetUserState(callbackQuery.From.Id);
+            switch (state)
             {
-                await botClient.AnswerCallbackQueryAsync(
-                    callbackQueryId: callbackQuery.Id,
-                    text: $"Ок, выбран {callbackQuery.Data}",
-                    showAlert: false
-                );
+                case UserState.AddResultsSelectCommunix:
+                    var communix = (await communixesStorage.GetAll()).Single(c => c.Id == callbackQuery.Data);
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: callbackQuery.Id,
+                        text: $"Ок, выбран {communix.Name}",
+                        showAlert: false
+                    );
 
-                await botClient.EditMessageTextAsync(
-                    chatId: callbackQuery.Message.Chat.Id,
-                    messageId: callbackQuery.Message.MessageId,
-                    text: "Теперь отправь ссылку на турнир на aetherhub"
-                );
-            }
-            else
-            {
-                await botClient.AnswerCallbackQueryAsync(
-                    callbackQueryId: callbackQuery.Id,
-                    text: "Не понял что делать",
-                    showAlert: false
-                );
+                    await botClient.EditMessageTextAsync(
+                        chatId: callbackQuery.Message!.Chat.Id,
+                        messageId: callbackQuery.Message.MessageId,
+                        text: $"Выбран {communix.Name}"
+                    );
+
+                    await usersStorage.SetUserState(callbackQuery.From.Id, UserState.AddResultsAwaitUrl);
+
+                    await botClient.SendTextMessageAsync(
+                        callbackQuery.Message.Chat.Id,
+                        "Теперь отправь ссылку на турнир Aetherhub");
+
+                    break;
+                default:
+                    await botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: callbackQuery.Id,
+                        text: "Не понял что делать",
+                        showAlert: false
+                    );
+                    break;
             }
         }
-
-        if (message?.Text != null)
+        else if (message is { Text: not null, From: not null })
         {
-            switch (message.Text)
+            var state = await usersStorage.GetUserState(message.From.Id);
+            switch (state)
             {
-                case "/rating":
+                case UserState.Default:
+                    switch (message.Text)
+                    {
+                        case "/rating":
+                            await usersStorage.SetUserState(message.From.Id, UserState.Rating);
+                            break;
+                        case "/addresults":
+                            await usersStorage.SetUserState(message.From.Id, UserState.AddResultsSelectCommunix);
+                            var communixes = await communixesStorage.GetAll();
+                            await botClient.SendTextMessageAsync(
+                                message.Chat.Id,
+                                "Выбери комуникс",
+                                replyMarkup: new InlineKeyboardMarkup(
+                                    communixes.Select(c =>
+                                            InlineKeyboardButton.WithCallbackData(c.Name, c.Id))
+                                        .ToArray()));
+                            break;
+                        case "/start":
+                        case "/help":
+                        default:
+                            await botClient.SendTextMessageAsync(
+                                message.Chat.Id,
+                                "Это бот для подсчета рейтинга игроков MTG на локальных турнирах.\n" +
+                                "Чтобы добавить результаты турнира или посмотреть рейтинг, воспользуйтесь соответствующей командой.");
+                            break;
+                    }
+
                     break;
-                case "/addresults":
-                    var communixes = await communixesStorage.GetAll();
-                    await botClient.SendTextMessageAsync(
-                        message.Chat.Id,
-                        "Выбери комуникс",
-                        replyMarkup: new InlineKeyboardMarkup(
-                            communixes.Select(c =>
-                                    InlineKeyboardButton.WithCallbackData(c.Name, c.Id))
-                                .ToArray()));
+                case UserState.AddResultsAwaitUrl:
                     break;
-                case "/start":
-                case "/help":
                 default:
+                    logger.LogWarning("Something went wrong");
+                    await usersStorage.SetUserState(message.From.Id, UserState.Default);
                     await botClient.SendTextMessageAsync(
                         message.Chat.Id,
-                        "Это бот для подсчета рейтинга игроков MTG на локальных турнирах.\n" +
-                        "Чтобы добавить результаты турнира или посмотреть рейтинг, воспользуйтесь соответствующей командой.");
+                        "Я тебя не понимаю, давай начнем сначала");
                     break;
             }
         }
@@ -96,6 +124,7 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
                     }
                     .Build())
             .AddSingleton<CommunixesStorage>()
+            .AddSingleton<UsersStorage>()
             .AddSingleton<ITelegramBotClient>(new TelegramBotClient(telegramAccessToken));
     }
 

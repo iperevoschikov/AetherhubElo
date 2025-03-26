@@ -23,5 +23,3 @@ public class CommunixesStorage(FirestoreDb firestoreDb)
         return new Communix(document.Id, document.GetValue<string>("name"));
     }
 }
-
-public record Communix(string Id, string Name);
