@@ -21,6 +21,34 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         logger.LogInformation("Received update {update}", System.Text.Json.JsonSerializer.Serialize(update));
 
         var message = update.Message;
+        var callbackQuery = update.CallbackQuery;
+
+        if (callbackQuery != null)
+        {
+            if (callbackQuery.Message!.Text == "Выбери комуникс")
+            {
+                await botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    text: $"Ок, выбран {callbackQuery.Data}",
+                    showAlert: false
+                );
+
+                await botClient.EditMessageTextAsync(
+                    chatId: callbackQuery.Message.Chat.Id,
+                    messageId: callbackQuery.Message.MessageId,
+                    text: "Теперь отправь ссылку на турнир на aetherhub"
+                );
+            }
+            else
+            {
+                await botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    text: "Не понял что делать",
+                    showAlert: false
+                );
+            }
+        }
+
         if (message?.Text != null)
         {
             switch (message.Text)
