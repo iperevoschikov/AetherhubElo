@@ -10,7 +10,7 @@ public class TourneysStorage(FirestoreDb firestoreDb)
         await tourneyDocument.SetAsync(new Dictionary<string, object>
         {
             ["aetherhub_id"] = tourney.AetherhubId,
-            ["date"] = tourney.Date,
+            ["date"] = tourney.Date.ToString("yyyy-MM-dd"),
             ["rounds"] = tourney.Rounds,
             ["communix"] = tourney.Communix,
         });
@@ -26,7 +26,7 @@ public class TourneysStorage(FirestoreDb firestoreDb)
                 Guid.Parse(tourney.Id),
                 tourney.GetValue<int>("aetherhub_id"),
                 tourney.GetValue<string>("communix"),
-                tourney.GetValue<DateOnly>("date"),
+                DateOnly.Parse(tourney.GetValue<string>("date")),
                 tourney.GetValue<Round[]>("rounds"));
         }
     }
