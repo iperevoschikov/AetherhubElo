@@ -160,6 +160,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                         await botClient.SendTextMessageAsync(
                             message.Chat.Id,
                             "Турнир сохранён");
+                        await usersStorage.SetUserState(message.Chat.Id, UserState.Default);
                     }
 
                     break;
