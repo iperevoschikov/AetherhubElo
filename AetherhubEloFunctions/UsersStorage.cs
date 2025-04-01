@@ -19,10 +19,12 @@ public class UsersStorage(FirestoreDb firestoreDb)
     public async Task SetUserCommunix(long userId, string communix)
     {
         var userDocumentReference = GetDocumentReference(userId);
-        await userDocumentReference.SetAsync(new Dictionary<string, object?>
-        {
-            ["communix"] = communix,
-        });
+        await userDocumentReference.SetAsync(
+            new Dictionary<string, object?>
+            {
+                ["communix"] = communix,
+            },
+            SetOptions.MergeAll);
     }
 
     public async Task<string?> GetUserCommunix(long userId)
@@ -38,11 +40,13 @@ public class UsersStorage(FirestoreDb firestoreDb)
     public async Task SetUserState(long userId, UserState state, string? data = null)
     {
         var userDocumentReference = GetDocumentReference(userId);
-        await userDocumentReference.SetAsync(new Dictionary<string, object?>
-        {
-            ["state"] = state,
-            ["data"] = data,
-        });
+        await userDocumentReference.SetAsync(
+            new Dictionary<string, object?>
+            {
+                ["state"] = state,
+                ["data"] = data,
+            },
+            SetOptions.MergeAll);
     }
 
     private DocumentReference GetDocumentReference(long userId)
