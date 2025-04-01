@@ -151,15 +151,22 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                     {
                         var tourneys = tourneysStorage.GetTourneys().Where(t => t.AetherhubId == tourneyId);
                         if (await tourneys.AnyAsync())
+                        {
                             await botClient.SendTextMessageAsync(
                                 message.Chat.Id,
                                 "Турнир был добавлен ранее");
-                        var (date, rounds) = await AetherhubTourneyParser.ParseTourney(tourneyId);
-                        await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix, date,
-                            rounds));
-                        await botClient.SendTextMessageAsync(
-                            message.Chat.Id,
-                            "Турнир сохранён");
+                        }
+                        else
+                        {
+                            var (date, rounds) = await AetherhubTourneyParser.ParseTourney(tourneyId);
+                            await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix,
+                                date,
+                                rounds));
+                            await botClient.SendTextMessageAsync(
+                                message.Chat.Id,
+                                "Турнир сохранён");
+                        }
+
                         await usersStorage.SetUserState(message.Chat.Id, UserState.Default);
                     }
 
