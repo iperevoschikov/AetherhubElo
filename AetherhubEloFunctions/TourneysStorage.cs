@@ -1,4 +1,5 @@
-﻿using Google.Cloud.Firestore;
+﻿using System.Text.Json;
+using Google.Cloud.Firestore;
 
 namespace AetherhubEloFunctions;
 
@@ -11,7 +12,7 @@ public class TourneysStorage(FirestoreDb firestoreDb)
         {
             ["aetherhub_id"] = tourney.AetherhubId,
             ["date"] = tourney.Date.ToString("yyyy-MM-dd"),
-            ["rounds"] = tourney.Rounds,
+            ["rounds"] = JsonSerializer.Serialize(tourney.Rounds),
             ["communix"] = tourney.Communix,
         });
     }
@@ -27,7 +28,7 @@ public class TourneysStorage(FirestoreDb firestoreDb)
                 tourney.GetValue<int>("aetherhub_id"),
                 tourney.GetValue<string>("communix"),
                 DateOnly.Parse(tourney.GetValue<string>("date")),
-                tourney.GetValue<Round[]>("rounds"));
+                JsonSerializer.Deserialize<Round[]>(tourney.GetValue<string>("rounds"))!);
         }
     }
 }
