@@ -99,10 +99,12 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                             var ratings = RatingCalculator.CalculateRatings(tourneys);
                             await botClient.SendTextMessageAsync(
                                 message.From.Id,
-                                string.Join('\n',
-                                    ratings
-                                        .OrderByDescending(kvp => kvp.Value)
-                                        .Select(kvp => $"{kvp.Key}: {kvp.Value}")));
+                                ratings.Count != 0
+                                    ? string.Join('\n',
+                                        ratings
+                                            .OrderByDescending(kvp => kvp.Value)
+                                            .Select(kvp => $"{kvp.Key}: {kvp.Value}"))
+                                    : "Пока не было добавлено никаких результатов (/addresults)");
                             break;
                         case "/addresults":
                             if (await usersStorage.GetUserCommunix(message.From.Id) == null)
