@@ -6,13 +6,14 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using YandexCloudFunctions.Net.Sdk;
+using YandexCloudFunctions.Net.Sdk.Webhook;
 
 namespace AetherhubEloFunctions;
 
-public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
+public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
 {
-    private static async Task<FunctionHandlerResponse> HandleAsync(
-        FunctionHandlerRequest request,
+    private static async Task<WebhookHandlerResponse> HandleAsync(
+        WebhookHandlerRequest request,
         ITelegramBotClient botClient,
         CommunixesStorage communixesStorage,
         UsersStorage usersStorage,
@@ -30,8 +31,16 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
             var (state, _) = await usersStorage.GetUserState(callbackQuery.From.Id);
             switch (state)
             {
-                case UserState.AddResultsSelectCommunix:
+                case UserState.SelectCommunix:
                     var communix = (await communixesStorage.GetAll()).Single(c => c.Id == callbackQuery.Data);
+                    await usersStorage.SetUserState(
+                        callbackQuery.From.Id,
+                        UserState.Default);
+
+                    await usersStorage.SetUserCommunix(
+                        callbackQuery.From.Id,
+                        communix.Id);
+
                     await botClient.AnswerCallbackQueryAsync(
                         callbackQueryId: callbackQuery.Id,
                         text: $"Ок, выбран {communix.Name}",
@@ -43,16 +52,6 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
                         messageId: callbackQuery.Message.MessageId,
                         text: $"Выбран {communix.Name}"
                     );
-
-                    await usersStorage.SetUserState(
-                        callbackQuery.From.Id,
-                        UserState.AddResultsAwaitUrl,
-                        communix.Id);
-
-                    await botClient.SendTextMessageAsync(
-                        callbackQuery.Message.Chat.Id,
-                        "Теперь отправь ссылку на турнир Aetherhub");
-
                     break;
                 default:
                     await botClient.AnswerCallbackQueryAsync(
@@ -65,17 +64,15 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
         }
         else if (message is { Text: not null, From: not null })
         {
-            var (state, data) = await usersStorage.GetUserState(message.From.Id);
+            var userCommunix = await usersStorage.GetUserCommunix(message.From.Id);
+            var (state, _) = await usersStorage.GetUserState(message.From.Id);
             switch (state)
             {
                 case UserState.Default:
                     switch (message.Text)
                     {
-                        case "/rating":
-                            await usersStorage.SetUserState(message.From.Id, UserState.Rating);
-                            break;
-                        case "/addresults":
-                            await usersStorage.SetUserState(message.From.Id, UserState.AddResultsSelectCommunix);
+                        case "/communix":
+                            await usersStorage.SetUserState(message.From.Id, UserState.SelectCommunix);
                             var communixes = await communixesStorage.GetAll();
                             await botClient.SendTextMessageAsync(
                                 message.Chat.Id,
@@ -84,6 +81,45 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
                                     communixes.Select(c =>
                                             InlineKeyboardButton.WithCallbackData(c.Name, c.Id))
                                         .ToArray()));
+                            break;
+                        case "/rating":
+
+                            if (userCommunix == null)
+                            {
+                                await botClient.SendTextMessageAsync(
+                                    message.From.Id,
+                                    "Сначала нужно выбрать твой комуникс /communix");
+                                break;
+                            }
+
+                            var tourneys = await tourneysStorage
+                                .GetTourneys()
+                                .Where(t => t.Communix == userCommunix)
+                                .ToArrayAsync();
+                            var ratings = RatingCalculator.CalculateRatings(tourneys);
+                            await botClient.SendTextMessageAsync(
+                                message.From.Id,
+                                string.Join('\n',
+                                    ratings
+                                        .OrderByDescending(kvp => kvp.Value)
+                                        .Select(kvp => $"{kvp.Key}: {kvp.Value}")));
+                            break;
+                        case "/addresults":
+                            if (await usersStorage.GetUserCommunix(message.From.Id) == null)
+                            {
+                                await botClient.SendTextMessageAsync(
+                                    message.From.Id,
+                                    "Сначала нужно выбрать твой комуникс /communix");
+                            }
+                            else
+                            {
+                                await usersStorage.SetUserState(message.From.Id, UserState.AddResultsAwaitUrl);
+
+                                await botClient.SendTextMessageAsync(
+                                    message.From.Id,
+                                    "Отправь ссылку на турнир Aetherhub");
+                            }
+
                             break;
                         case "/start":
                         case "/help":
@@ -97,6 +133,14 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
 
                     break;
                 case UserState.AddResultsAwaitUrl:
+                    if (userCommunix == null)
+                    {
+                        await botClient.SendTextMessageAsync(
+                            message.From.Id,
+                            "Сначала нужно выбрать твой комуникс /communix");
+                        break;
+                    }
+
                     if (!AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text, out var tourneyId))
                         await botClient.SendTextMessageAsync(
                             message.Chat.Id,
@@ -109,7 +153,8 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
                                 message.Chat.Id,
                                 "Турнир был добавлен ранее");
                         var (date, rounds) = await AetherhubTourneyParser.ParseTourney(tourneyId);
-                        await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, data!, date, rounds));
+                        await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix, date,
+                            rounds));
                         await botClient.SendTextMessageAsync(
                             message.Chat.Id,
                             "Турнир сохранён");
@@ -126,7 +171,7 @@ public class TelegramWebhookFunction() : BaseFunctionHandler(HandleAsync)
             }
         }
 
-        return FunctionHandlerResponses.Ok();
+        return WebhookHandlerResponses.Ok();
     }
 
     protected override void ConfigureServices(IServiceCollection services)
