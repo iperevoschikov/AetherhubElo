@@ -82,6 +82,16 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                             InlineKeyboardButton.WithCallbackData(c.Name, c.Id))
                                         .ToArray()));
                             break;
+
+                        case "/global":
+                            await botClient.SendTextMessageAsync(
+                                message.From.Id,
+                                PrintRatings(RatingCalculator
+                                    .CalculateRatings(await tourneysStorage
+                                        .GetTourneys()
+                                        .ToArrayAsync())));
+                            break;
+
                         case "/rating":
 
                             if (userCommunix == null)
@@ -92,19 +102,13 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                 break;
                             }
 
-                            var tourneys = await tourneysStorage
-                                .GetTourneys()
-                                .Where(t => t.Communix == userCommunix)
-                                .ToArrayAsync();
-                            var ratings = RatingCalculator.CalculateRatings(tourneys);
                             await botClient.SendTextMessageAsync(
                                 message.From.Id,
-                                ratings.Count != 0
-                                    ? string.Join('\n',
-                                        ratings
-                                            .OrderByDescending(kvp => kvp.Value)
-                                            .Select(kvp => $"{kvp.Key}: {kvp.Value}"))
-                                    : "Пока не было добавлено никаких результатов (/addresults)");
+                                PrintRatings(RatingCalculator
+                                    .CalculateRatings(await tourneysStorage
+                                        .GetTourneys()
+                                        .Where(t => t.Communix == userCommunix)
+                                        .ToArrayAsync())));
                             break;
                         case "/addresults":
                             if (await usersStorage.GetUserCommunix(message.From.Id) == null)
@@ -182,6 +186,16 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
         }
 
         return WebhookHandlerResponses.Ok();
+    }
+
+    private static string PrintRatings(Dictionary<string, double> ratings)
+    {
+        return ratings.Count != 0
+            ? string.Join('\n',
+                ratings
+                    .OrderByDescending(kvp => kvp.Value)
+                    .Select(kvp => $"{kvp.Key}: {kvp.Value:N0}"))
+            : "Пока не было добавлено никаких результатов (/addresults)";
     }
 
     protected override void ConfigureServices(IServiceCollection services)
