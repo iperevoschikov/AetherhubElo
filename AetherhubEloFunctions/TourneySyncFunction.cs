@@ -23,17 +23,19 @@ public class TourneySyncFunction() : MessageQueueFunctionHandler(HandleAsync)
             if (communix != null)
             {
                 await tourneysStorage.WriteTourney(new Tourney(
-                    Guid.NewGuid(), 
-                    newTourney.ExternalId, 
-                    communix, 
+                    Guid.NewGuid(),
+                    newTourney.ExternalId,
+                    communix,
                     date,
                     rounds));
             }
             else
             {
-                logger.LogInformation("Communix not found for tourney: {Name}, {Date:d}", newTourney.Name, newTourney.Date);
+                logger.LogInformation(
+                    "Communix not found for tourney: {Name}, {Date:d}",
+                    newTourney.Name,
+                    newTourney.Date);
             }
-
         }
 
         return string.Empty;

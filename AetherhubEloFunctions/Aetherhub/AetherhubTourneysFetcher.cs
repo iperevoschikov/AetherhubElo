@@ -84,7 +84,7 @@ public class AetherhubTourneysFetcher(
 
         return tourneys
             .Model
-            .Select(x => new TourneyMeta (x.Id, x.Name, DateOnly.FromDateTime( x.Date)))
+            .Select(x => new TourneyMeta(x.Id, x.Name, DateOnly.FromDateTime(x.Date)))
             .ToArray();
     }
 }

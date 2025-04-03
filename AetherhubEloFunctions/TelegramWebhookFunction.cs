@@ -146,7 +146,8 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                         break;
                     }
 
-                    if (!Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text, out var tourneyId))
+                    if (!Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text,
+                            out var tourneyId))
                         await botClient.SendTextMessageAsync(
                             message.Chat.Id,
                             "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072");
