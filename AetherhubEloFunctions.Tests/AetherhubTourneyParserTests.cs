@@ -1,4 +1,6 @@
-﻿namespace AetherhubEloFunctions.Tests;
+﻿using AetherhubEloFunctions.Aetherhub;
+
+namespace AetherhubEloFunctions.Tests;
 
 public class AetherhubTourneyParserTests
 {

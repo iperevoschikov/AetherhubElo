@@ -20,6 +20,10 @@ public class CommunixesStorage(FirestoreDb firestoreDb)
 
     private static Communix ToModel(DocumentSnapshot document)
     {
-        return new Communix(document.Id, document.GetValue<string>("name"));
+        return new Communix(
+            document.Id, 
+            document.GetValue<string>("name"),
+            (DayOfWeek)document.GetValue<int>("weekday"),
+            document.GetValue<string>("aliases")?.Split(',').ToArray() ?? []);
     }
 }

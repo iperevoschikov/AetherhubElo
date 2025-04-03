@@ -3,15 +3,15 @@ using System.Web;
 using AngleSharp;
 using AngleSharp.Dom;
 
-namespace AetherhubEloFunctions;
+namespace AetherhubEloFunctions.Aetherhub;
 
-public partial class AetherhubTourneyParser
+public static partial class AetherhubTourneyParser
 {
     public static async Task<(DateOnly Date, Round[] Rounds)> ParseTourney(int tourneyId)
     {
         var baseAddress = new Url("https://aetherhub.com/");
         var url = new Url(baseAddress, $"/Tourney/RoundTourney/{tourneyId}");
-        var browsingContext = BrowsingContext.New(Configuration.Default.WithDefaultLoader());
+        var browsingContext = BrowsingContext.New(AngleSharp.Configuration.Default.WithDefaultLoader());
         var document = await browsingContext.OpenAsync(url);
         var title = document.QuerySelector("title");
 

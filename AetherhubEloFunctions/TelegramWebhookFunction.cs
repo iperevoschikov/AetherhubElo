@@ -1,5 +1,4 @@
-﻿using Google.Cloud.Firestore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Telegram.Bot;
@@ -147,7 +146,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                         break;
                     }
 
-                    if (!AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text, out var tourneyId))
+                    if (!Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text, out var tourneyId))
                         await botClient.SendTextMessageAsync(
                             message.Chat.Id,
                             "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072");
@@ -162,7 +161,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                         }
                         else
                         {
-                            var (date, rounds) = await AetherhubTourneyParser.ParseTourney(tourneyId);
+                            var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
                             await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix,
                                 date,
                                 rounds));
@@ -200,34 +199,9 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
 
     protected override void ConfigureServices(IServiceCollection services)
     {
-        var telegramAccessToken = GetConfigurationValue("TG_ACCESS_TOKEN");
-        var googleCloudJsonCredentials =
-            System.Text.Encoding.UTF8.GetString(
-                Convert.FromBase64String(
-                    GetConfigurationValue("GOOGLE_CLOUD_JSON_CREDENTIALS")));
-
+        var telegramAccessToken = Configuration.GetConfigurationValue("TG_ACCESS_TOKEN");
         services
-            .AddSingleton(
-                new FirestoreDbBuilder
-                    {
-                        ProjectId = "mtg-ekb-elo",
-                        JsonCredentials = googleCloudJsonCredentials,
-                    }
-                    .Build())
-            .AddSingleton<CommunixesStorage>()
-            .AddSingleton<UsersStorage>()
-            .AddSingleton<TourneysStorage>()
-            .AddSingleton<AetherhubTourneyParser>()
+            .ConfigureStorage()
             .AddSingleton<ITelegramBotClient>(new TelegramBotClient(telegramAccessToken));
-    }
-
-    private static string GetConfigurationValue(string name)
-    {
-        var value = Environment.GetEnvironmentVariable(name);
-
-        if (string.IsNullOrEmpty(value))
-            throw new Exception($"{name} not found");
-
-        return value;
     }
 }
