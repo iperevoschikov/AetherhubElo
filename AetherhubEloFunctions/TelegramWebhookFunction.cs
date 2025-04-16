@@ -88,6 +88,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                 PrintRatings(RatingCalculator
                                     .CalculateRatings(await tourneysStorage
                                         .GetTourneys()
+                                        .OrderBy(t => t.Date)
                                         .ToArrayAsync())));
                             break;
 
@@ -107,6 +108,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                     .CalculateRatings(await tourneysStorage
                                         .GetTourneys()
                                         .Where(t => t.Communix == userCommunix)
+                                        .OrderBy(t => t.Date)
                                         .ToArrayAsync())));
                             break;
                         case "/addresults":
@@ -153,23 +155,16 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                             "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072");
                     else
                     {
-                        var tourneys = tourneysStorage.GetTourneys().Where(t => t.AetherhubId == tourneyId);
-                        if (await tourneys.AnyAsync())
-                        {
-                            await botClient.SendTextMessageAsync(
-                                message.Chat.Id,
-                                "Турнир был добавлен ранее");
-                        }
-                        else
-                        {
-                            var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
-                            await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix,
-                                date,
-                                rounds));
-                            await botClient.SendTextMessageAsync(
-                                message.Chat.Id,
-                                "Турнир сохранён");
-                        }
+                        var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
+                        await tourneysStorage.WriteTourney(new Tourney(
+                            Guid.NewGuid(),
+                            tourneyId,
+                            userCommunix,
+                            date,
+                            rounds));
+                        await botClient.SendTextMessageAsync(
+                            message.Chat.Id,
+                            "Турнир сохранён");
 
                         await usersStorage.SetUserState(message.Chat.Id, UserState.Default);
                     }
