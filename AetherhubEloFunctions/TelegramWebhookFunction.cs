@@ -155,18 +155,23 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                             "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072");
                     else
                     {
-                        var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
-                        await tourneysStorage.WriteTourney(new Tourney(
-                            Guid.NewGuid(),
-                            tourneyId,
-                            userCommunix,
-                            date,
-                            rounds));
-                        await botClient.SendTextMessageAsync(
-                            message.Chat.Id,
-                            "Турнир сохранён");
-
-                        await usersStorage.SetUserState(message.Chat.Id, UserState.Default);
+                        var tourneys = tourneysStorage.GetTourneys().Where(t => t.AetherhubId == tourneyId);
+                        if (await tourneys.AnyAsync())
+                        {
+                            await botClient.SendTextMessageAsync(
+                                message.Chat.Id,
+                                "Турнир был добавлен ранее");
+                        }
+                        else
+                        {
+                            var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
+                            await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix,
+                                date,
+                                rounds));
+                            await botClient.SendTextMessageAsync(
+                                message.Chat.Id,
+                                "Турнир сохранён");
+                        }
                     }
 
                     break;
