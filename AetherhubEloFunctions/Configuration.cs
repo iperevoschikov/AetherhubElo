@@ -25,10 +25,10 @@ public static class Configuration
         return services
             .AddSingleton(
                 new FirestoreDbBuilder
-                    {
-                        ProjectId = "mtg-ekb-elo",
-                        JsonCredentials = googleCloudJsonCredentials,
-                    }
+                {
+                    ProjectId = "mtg-ekb-elo",
+                    JsonCredentials = googleCloudJsonCredentials,
+                }
                     .Build())
             .AddSingleton<CommunixesStorage>()
             .AddSingleton<UsersStorage>()

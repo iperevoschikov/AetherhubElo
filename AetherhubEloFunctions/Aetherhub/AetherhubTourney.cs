@@ -9,7 +9,7 @@ public class AetherhubTourney
 
     [JsonPropertyName("name")]
     public string Name { get; set; }
-    
+
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 }
