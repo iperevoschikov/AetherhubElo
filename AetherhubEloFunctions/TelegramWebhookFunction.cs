@@ -145,35 +145,38 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                         await botClient.SendTextMessageAsync(
                             message.From.Id,
                             "Сначала нужно выбрать твой комуникс /communix");
-                        break;
                     }
-
-                    if (!Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text,
-                            out var tourneyId))
-                        await botClient.SendTextMessageAsync(
-                            message.Chat.Id,
-                            "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072");
                     else
                     {
-                        var tourneys = tourneysStorage.GetTourneys().Where(t => t.AetherhubId == tourneyId);
-                        if (await tourneys.AnyAsync())
-                        {
+
+                        if (!Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text,
+                                out var tourneyId))
                             await botClient.SendTextMessageAsync(
                                 message.Chat.Id,
-                                "Турнир был добавлен ранее");
-                        }
+                                "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072");
                         else
                         {
-                            var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
-                            await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix,
-                                date,
-                                rounds));
-                            await botClient.SendTextMessageAsync(
-                                message.Chat.Id,
-                                "Турнир сохранён");
+                            var tourneys = tourneysStorage.GetTourneys().Where(t => t.AetherhubId == tourneyId);
+                            if (await tourneys.AnyAsync())
+                            {
+                                await botClient.SendTextMessageAsync(
+                                    message.Chat.Id,
+                                    "Турнир был добавлен ранее");
+                            }
+                            else
+                            {
+                                var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
+                                await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix,
+                                    date,
+                                    rounds));
+                                await botClient.SendTextMessageAsync(
+                                    message.Chat.Id,
+                                    "Турнир сохранён");
+                            }
                         }
                     }
 
+                    await usersStorage.SetUserState(message.From.Id, UserState.Default);
                     break;
                 default:
                     logger.LogWarning("Something went wrong");
