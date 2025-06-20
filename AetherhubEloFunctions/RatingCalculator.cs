@@ -1,4 +1,6 @@
-﻿namespace AetherhubEloFunctions;
+﻿using AetherhubEloFunctions.NameRecognition;
+
+namespace AetherhubEloFunctions;
 
 public class RatingCalculator
 {
@@ -11,10 +13,14 @@ public class RatingCalculator
             foreach (var round in tourney.Rounds)
                 foreach (var game in round.Games)
                 {
-                    if (IsBye(game.Player1) || IsBye(game.Player2))
+
+                    var player1 = NameNormalizer.NormalizePlayerName(game.Player1);
+                    var player2 = NameNormalizer.NormalizePlayerName(game.Player2);
+
+                    if (IsBye(player1) || IsBye(player2))
                         continue;
-                    var r1 = ratings.GetValueOrDefault(game.Player1, 1500);
-                    var r2 = ratings.GetValueOrDefault(game.Player2, 1500);
+                    var r1 = ratings.GetValueOrDefault(player1, 1500);
+                    var r2 = ratings.GetValueOrDefault(player2, 1500);
                     var e1 = 1 / (1 + Math.Pow(10, (r2 - r1) / 400));
                     var e2 = 1 / (1 + Math.Pow(10, (r1 - r2) / 400));
 
@@ -26,8 +32,8 @@ public class RatingCalculator
 
                     var s2 = 1 - s1;
 
-                    ratings[game.Player1] = r1 + K * (s1 - e1);
-                    ratings[game.Player2] = r2 + K * (s2 - e2);
+                    ratings[player1] = r1 + K * (s1 - e1);
+                    ratings[player2] = r2 + K * (s2 - e2);
                 }
 
         return ratings;
@@ -38,5 +44,5 @@ public class RatingCalculator
         return ByeAliases.Any(x => player.ToLower().Equals(x, StringComparison.InvariantCultureIgnoreCase));
     }
 
-    private static string[] ByeAliases = ["bye", "бай"];
+    private static readonly string[] ByeAliases = ["bye", "бай"];
 }
