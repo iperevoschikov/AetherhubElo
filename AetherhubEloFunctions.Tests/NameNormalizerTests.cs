@@ -116,11 +116,11 @@ public class NameNormalizerTests
             .OrderBy(x => x)
             .ToArray();
 
-        foreach(var name in normalized)
+        foreach (var name in normalized)
         {
             Console.WriteLine(name);
         }
 
-        Assert.That(normalized, Has.Length.EqualTo(71));
+        Assert.That(normalized, Has.Length.EqualTo(70));
     }
 }

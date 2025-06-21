@@ -15,6 +15,11 @@ public static class NameNormalizer
         { "Лиза", "Елизавета" },
     };
 
+    private static readonly Dictionary<string, string> SurnameAliases = new()
+    {
+        { "Ллановаров", "Лановаров" },
+    };
+
     public static string NormalizePlayerName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -37,6 +42,15 @@ public static class NameNormalizer
         else if (ShortNames.TryGetValue(second, out fullName) && !ShortNames.ContainsKey(first))
         {
             second = fullName;
+        }
+
+        if (SurnameAliases.TryGetValue(first, out var alias))
+        {
+            first = alias;
+        }
+        else if (SurnameAliases.TryGetValue(second, out alias))
+        {
+            second = alias;
         }
 
         return (!RussianNames.Contains(first) && RussianNames.Contains(second))
