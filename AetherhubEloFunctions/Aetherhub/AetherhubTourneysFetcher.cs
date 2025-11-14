@@ -6,9 +6,10 @@ namespace AetherhubEloFunctions.Aetherhub;
 
 public class AetherhubTourneysFetcher(
     IHttpClientFactory httpClientFactory,
-    ILogger<AetherhubTourneysFetcher> logger)
+    ILogger<AetherhubTourneysFetcher> logger
+)
 {
-    public async Task<TourneyMeta[]> FetchRecentTourneys()
+    public async IAsyncEnumerable<TourneyMeta> FetchRecentTourneys()
     {
         var client = httpClientFactory.CreateClient();
         var response = await client.PostAsync(
@@ -73,18 +74,22 @@ public class AetherhubTourneysFetcher(
                     }
                 }
                 """,
-                new MediaTypeHeaderValue("application/json")));
+                new MediaTypeHeaderValue("application/json")
+            )
+        );
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadAsStringAsync();
         var tourneys = JsonConvert.DeserializeObject<AetherhubFetchPublicTourneysResponse>(json);
         if (tourneys == null)
             throw new ApplicationException("Failed to fetch public tourneys");
 
-        logger.LogInformation("Retrieved information about tourneys. Count: {Count}", tourneys.Model.Length);
+        logger.LogInformation(
+            "Retrieved information about tourneys. Count: {Count}",
+            tourneys.Model.Length
+        );
 
-        return tourneys
-            .Model
-            .Select(x => new TourneyMeta(x.Id, x.Name, DateOnly.FromDateTime(x.Date)))
-            .ToArray();
+        foreach (var x in tourneys.Model)
+            yield return new TourneyMeta(x.Id, x.Name, DateOnly.FromDateTime(x.Date));
     }
 }
+

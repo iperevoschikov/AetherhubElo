@@ -5,5 +5,6 @@ namespace AetherhubEloFunctions.Aetherhub;
 public class AetherhubFetchPublicTourneysResponse
 {
     [JsonPropertyName("model")]
-    public AetherhubTourney[] Model { get; set; }
+    public required AetherhubTourney[] Model { get; set; }
 }
+

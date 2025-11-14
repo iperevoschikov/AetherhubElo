@@ -14,27 +14,28 @@ public class TourneySyncFunction() : MessageQueueFunctionHandler(HandleAsync)
         ILogger<TourneySyncFunction> logger
     )
     {
-        var recentTourneys = await tourneysFetcher.FetchRecentTourneys();
         var tourneys = await tourneysStorage.GetTourneys().Select(t => t.AetherhubId).ToListAsync();
-        foreach (var newTourney in recentTourneys.Where(r => !tourneys.Contains(r.ExternalId)))
+        var recentTourneys = tourneysFetcher
+            .FetchRecentTourneys()
+            .Where(r => !tourneys.Contains(r.ExternalId));
+
+        await foreach (var newTourney in recentTourneys)
         {
             var (date, rounds) = await AetherhubTourneyParser.ParseTourney(newTourney.ExternalId);
             var communix = await communixGuesser.GuessCommunix(newTourney);
             if (communix != null)
             {
-                await tourneysStorage.WriteTourney(new Tourney(
-                    Guid.NewGuid(),
-                    newTourney.ExternalId,
-                    communix,
-                    date,
-                    rounds));
+                await tourneysStorage.WriteTourney(
+                    new Tourney(Guid.NewGuid(), newTourney.ExternalId, communix, date, rounds)
+                );
             }
             else
             {
                 logger.LogInformation(
                     "Communix not found for tourney: {Name}, {Date:d}",
                     newTourney.Name,
-                    newTourney.Date);
+                    newTourney.Date
+                );
             }
         }
 
@@ -50,3 +51,4 @@ public class TourneySyncFunction() : MessageQueueFunctionHandler(HandleAsync)
             .AddHttpClient();
     }
 }
+

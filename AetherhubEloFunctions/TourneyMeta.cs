@@ -1,3 +1,4 @@
 ﻿namespace AetherhubEloFunctions;
 
-public record TourneyMeta(int ExternalId, string Name, DateOnly Date);
+public record TourneyMeta(int ExternalId, string? Name, DateOnly Date);
+

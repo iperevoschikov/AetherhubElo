@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AetherhubEloFunctions.Aetherhub;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Telegram.Bot;
@@ -17,13 +18,23 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
         CommunixesStorage communixesStorage,
         UsersStorage usersStorage,
         TourneysStorage tourneysStorage,
-        ILogger<TelegramWebhookFunction> logger)
+        AetherhubTourneysFetcher tourneysFetcher,
+        ILogger<TelegramWebhookFunction> logger
+    )
     {
         var update = JsonConvert.DeserializeObject<Update>(request.body)!;
-        logger.LogInformation("Received update {update}", System.Text.Json.JsonSerializer.Serialize(update));
+        logger.LogInformation(
+            "Received update {update}",
+            System.Text.Json.JsonSerializer.Serialize(update)
+        );
 
         var message = update.Message;
         var callbackQuery = update.CallbackQuery;
+
+        Task Respond(string response)
+        {
+            return botClient.SendTextMessageAsync(message.Chat.Id, response);
+        }
 
         if (callbackQuery is { Data: not null })
         {
@@ -31,14 +42,12 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
             switch (state)
             {
                 case UserState.SelectCommunix:
-                    var communix = (await communixesStorage.GetAll()).Single(c => c.Id == callbackQuery.Data);
-                    await usersStorage.SetUserState(
-                        callbackQuery.From.Id,
-                        UserState.Default);
+                    var communix = (await communixesStorage.GetAll()).Single(c =>
+                        c.Id == callbackQuery.Data
+                    );
+                    await usersStorage.SetUserState(callbackQuery.From.Id, UserState.Default);
 
-                    await usersStorage.SetUserCommunix(
-                        callbackQuery.From.Id,
-                        communix.Id);
+                    await usersStorage.SetUserCommunix(callbackQuery.From.Id, communix.Id);
 
                     await botClient.AnswerCallbackQueryAsync(
                         callbackQueryId: callbackQuery.Id,
@@ -71,70 +80,110 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                     switch (message.Text)
                     {
                         case "/communix":
-                            await usersStorage.SetUserState(message.From.Id, UserState.SelectCommunix);
+                            await usersStorage.SetUserState(
+                                message.From.Id,
+                                UserState.SelectCommunix
+                            );
                             var communixes = await communixesStorage.GetAll();
                             await botClient.SendTextMessageAsync(
                                 message.Chat.Id,
                                 "Выбери комуникс",
                                 replyMarkup: new InlineKeyboardMarkup(
-                                    communixes.Select(c =>
-                                            InlineKeyboardButton.WithCallbackData(c.Name, c.Id))
-                                        .ToArray()));
+                                    communixes
+                                        .Select(c =>
+                                            InlineKeyboardButton.WithCallbackData(c.Name, c.Id)
+                                        )
+                                        .ToArray()
+                                )
+                            );
                             break;
 
                         case "/global":
-                            await botClient.SendTextMessageAsync(
-                                message.From.Id,
-                                PrintRatings(RatingCalculator
-                                    .CalculateRatings(await tourneysStorage
-                                        .GetTourneys()
-                                        .OrderBy(t => t.Date)
-                                        .ToArrayAsync())));
+                            await Respond(
+                                PrintRatings(
+                                    RatingCalculator.CalculateRatings(
+                                        await tourneysStorage
+                                            .GetTourneys()
+                                            .OrderBy(t => t.Date)
+                                            .ToArrayAsync()
+                                    )
+                                )
+                            );
                             break;
 
                         case "/rating":
 
                             if (userCommunix == null)
                             {
-                                await botClient.SendTextMessageAsync(
-                                    message.From.Id,
-                                    "Сначала нужно выбрать твой комуникс /communix");
+                                await Respond("Сначала нужно выбрать твой комуникс /communix");
                                 break;
                             }
 
-                            await botClient.SendTextMessageAsync(
-                                message.From.Id,
-                                PrintRatings(RatingCalculator
-                                    .CalculateRatings(await tourneysStorage
-                                        .GetTourneys()
-                                        .Where(t => t.Communix == userCommunix)
-                                        .OrderBy(t => t.Date)
-                                        .ToArrayAsync())));
+                            await Respond(
+                                PrintRatings(
+                                    RatingCalculator.CalculateRatings(
+                                        await tourneysStorage
+                                            .GetTourneys()
+                                            .Where(t => t.Communix == userCommunix)
+                                            .OrderBy(t => t.Date)
+                                            .ToArrayAsync()
+                                    )
+                                )
+                            );
                             break;
                         case "/addresults":
                             if (await usersStorage.GetUserCommunix(message.From.Id) == null)
                             {
-                                await botClient.SendTextMessageAsync(
-                                    message.From.Id,
-                                    "Сначала нужно выбрать твой комуникс /communix");
+                                await Respond("Сначала нужно выбрать твой комуникс /communix");
                             }
                             else
                             {
-                                await usersStorage.SetUserState(message.From.Id, UserState.AddResultsAwaitUrl);
-
-                                await botClient.SendTextMessageAsync(
+                                await usersStorage.SetUserState(
                                     message.From.Id,
-                                    "Отправь ссылку на турнир Aetherhub");
+                                    UserState.AddResultsAwaitUrl
+                                );
+
+                                await Respond("Отправь ссылку на турнир Aetherhub");
                             }
 
+                            break;
+                        case "/pairings":
+                            var recent = await tourneysFetcher
+                                .FetchRecentTourneys()
+                                .FirstOrDefaultAsync();
+                            if (recent != null)
+                            {
+                                var lastTourney = await AetherhubTourneyParser.ParseTourney(
+                                    recent.ExternalId
+                                );
+                                var lastRound = lastTourney.Rounds.LastOrDefault();
+                                if (lastRound != null)
+                                {
+                                    await Respond(
+                                        string.Join(
+                                            '\n',
+                                            lastRound.Games.Select(g =>
+                                                $"{g.Player1} - {g.Player2}"
+                                            )
+                                        )
+                                    );
+                                }
+                                else
+                                {
+                                    await Respond("Не нашел ни одного раунда");
+                                    break;
+                                }
+                            }
+                            else
+                                await Respond("Не нашел ни одного турнира");
                             break;
                         case "/start":
                         case "/help":
                         default:
-                            await botClient.SendTextMessageAsync(
-                                message.Chat.Id,
-                                "Это бот для подсчета рейтинга игроков MTG на локальных турнирах.\n" +
-                                "Чтобы добавить результаты турнира или посмотреть рейтинг, воспользуйтесь соответствующей командой.");
+                            await Respond(
+                                "Это бот для подсчета рейтинга игроков MTG на локальных турнирах.\n"
+                                    + "Чтобы добавить результаты турнира или посмотреть рейтинг, воспользуйтесь соответствующей командой."
+                            );
                             break;
                     }
 
@@ -142,36 +191,42 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                 case UserState.AddResultsAwaitUrl:
                     if (userCommunix == null)
                     {
-                        await botClient.SendTextMessageAsync(
-                            message.From.Id,
-                            "Сначала нужно выбрать твой комуникс /communix");
+                        await Respond("Сначала нужно выбрать твой комуникс /communix");
                     }
                     else
                     {
-
-                        if (!Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(message.Text,
-                                out var tourneyId))
-                            await botClient.SendTextMessageAsync(
-                                message.Chat.Id,
-                                "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072");
+                        if (
+                            !Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(
+                                message.Text,
+                                out var tourneyId
+                            )
+                        )
+                            await Respond(
+                                "Не смог разобрать урл. Он должен выглядеть вот так: https://aetherhub.com/Tourney/RoundTourney/38072"
+                            );
                         else
                         {
-                            var tourneys = tourneysStorage.GetTourneys().Where(t => t.AetherhubId == tourneyId);
+                            var tourneys = tourneysStorage
+                                .GetTourneys()
+                                .Where(t => t.AetherhubId == tourneyId);
                             if (await tourneys.AnyAsync())
                             {
-                                await botClient.SendTextMessageAsync(
-                                    message.Chat.Id,
-                                    "Турнир был добавлен ранее");
+                                await Respond("Турнир был добавлен ранее");
                             }
                             else
                             {
-                                var (date, rounds) = await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
-                                await tourneysStorage.WriteTourney(new Tourney(Guid.NewGuid(), tourneyId, userCommunix,
-                                    date,
-                                    rounds));
-                                await botClient.SendTextMessageAsync(
-                                    message.Chat.Id,
-                                    "Турнир сохранён");
+                                var (date, rounds) =
+                                    await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
+                                await tourneysStorage.WriteTourney(
+                                    new Tourney(
+                                        Guid.NewGuid(),
+                                        tourneyId,
+                                        userCommunix,
+                                        date,
+                                        rounds
+                                    )
+                                );
+                                await Respond("Турнир сохранён");
                             }
                         }
                     }
@@ -181,9 +236,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                 default:
                     logger.LogWarning("Something went wrong");
                     await usersStorage.SetUserState(message.From.Id, UserState.Default);
-                    await botClient.SendTextMessageAsync(
-                        message.Chat.Id,
-                        "Я тебя не понимаю, давай начнем сначала");
+                    await Respond("Я тебя не понимаю, давай начнем сначала");
                     break;
             }
         }
@@ -194,10 +247,12 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
     private static string PrintRatings(Dictionary<string, double> ratings)
     {
         return ratings.Count != 0
-            ? string.Join('\n',
+            ? string.Join(
+                '\n',
                 ratings
                     .OrderByDescending(kvp => kvp.Value)
-                    .Select(kvp => $"{kvp.Key}: {kvp.Value:N0}"))
+                    .Select(kvp => $"{kvp.Key}: {kvp.Value:N0}")
+            )
             : "Пока не было добавлено никаких результатов (/addresults)";
     }
 
@@ -209,3 +264,4 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
             .AddSingleton<ITelegramBotClient>(new TelegramBotClient(telegramAccessToken));
     }
 }
+

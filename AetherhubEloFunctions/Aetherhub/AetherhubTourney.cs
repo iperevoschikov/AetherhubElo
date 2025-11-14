@@ -8,8 +8,9 @@ public class AetherhubTourney
     public int Id { get; set; }
 
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 }
+
