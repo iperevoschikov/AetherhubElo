@@ -33,7 +33,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
 
         Task Respond(string response)
         {
-            return botClient.SendTextMessageAsync(message.Chat.Id, response);
+            return botClient.SendMessage(message.Chat.Id, response);
         }
 
         if (callbackQuery is { Data: not null })
@@ -49,20 +49,20 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
 
                     await usersStorage.SetUserCommunix(callbackQuery.From.Id, communix.Id);
 
-                    await botClient.AnswerCallbackQueryAsync(
+                    await botClient.AnswerCallbackQuery(
                         callbackQueryId: callbackQuery.Id,
                         text: $"Ок, выбран {communix.Name}",
                         showAlert: false
                     );
 
-                    await botClient.EditMessageTextAsync(
+                    await botClient.EditMessageText(
                         chatId: callbackQuery.Message!.Chat.Id,
                         messageId: callbackQuery.Message.MessageId,
                         text: $"Выбран {communix.Name}"
                     );
                     break;
                 default:
-                    await botClient.AnswerCallbackQueryAsync(
+                    await botClient.AnswerCallbackQuery(
                         callbackQueryId: callbackQuery.Id,
                         text: "Не понял что делать",
                         showAlert: false
@@ -85,7 +85,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                 UserState.SelectCommunix
                             );
                             var communixes = await communixesStorage.GetAll();
-                            await botClient.SendTextMessageAsync(
+                            await botClient.SendMessage(
                                 message.Chat.Id,
                                 "Выбери комуникс",
                                 replyMarkup: new InlineKeyboardMarkup(
@@ -266,4 +266,3 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
             .AddHttpClient();
     }
 }
-
