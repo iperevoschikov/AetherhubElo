@@ -153,10 +153,10 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                 .FirstOrDefaultAsync();
                             if (recent != null)
                             {
-                                var lastTourney = await AetherhubTourneyParser.ParseTourney(
+                                var (_, Rounds) = await AetherhubTourneyParser.ParseTourney(
                                     recent.ExternalId
                                 );
-                                var lastRound = lastTourney.Rounds.LastOrDefault();
+                                var lastRound = Rounds.LastOrDefault();
                                 if (lastRound != null)
                                 {
                                     await Respond(
@@ -196,7 +196,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                     else
                     {
                         if (
-                            !Aetherhub.AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(
+                            !AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(
                                 message.Text,
                                 out var tourneyId
                             )
@@ -216,7 +216,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                             else
                             {
                                 var (date, rounds) =
-                                    await Aetherhub.AetherhubTourneyParser.ParseTourney(tourneyId);
+                                    await AetherhubTourneyParser.ParseTourney(tourneyId);
                                 await tourneysStorage.WriteTourney(
                                     new Tourney(
                                         Guid.NewGuid(),

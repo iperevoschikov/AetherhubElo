@@ -1,4 +1,5 @@
-﻿using Google.Cloud.Firestore;
+﻿using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AetherhubEloFunctions;
@@ -22,12 +23,14 @@ public static class Configuration
                 Convert.FromBase64String(
                     GetConfigurationValue("GOOGLE_CLOUD_JSON_CREDENTIALS")));
 
+        var credentials = CredentialFactory.FromJson<GoogleCredential>(googleCloudJsonCredentials);
+
         return services
             .AddSingleton(
                 new FirestoreDbBuilder
                 {
                     ProjectId = "mtg-ekb-elo",
-                    JsonCredentials = googleCloudJsonCredentials,
+                    GoogleCredential = credentials,
                 }
                     .Build())
             .AddSingleton<CommunixesStorage>()
