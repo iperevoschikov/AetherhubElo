@@ -262,7 +262,8 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
         services
             .ConfigureStorage()
             .AddSingleton<ITelegramBotClient>(new TelegramBotClient(telegramAccessToken))
-            .AddSingleton<AetherhubTourneysFetcher>();
+            .AddSingleton<AetherhubTourneysFetcher>()
+            .AddHttpClient();
     }
 }
 
