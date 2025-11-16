@@ -44,58 +44,8 @@ async function scrapeContent(url, timeout = 30000) {
     }
 }
 
-app.get('/scrape', async (req, res) => {
-    const { url, timeout } = req.query;
-
-    if (!url) {
-        return res.status(400).json({
-            error: 'URL параметр обязателен',
-            usage: '/scrape?url=https://example.com&timeout=30000'
-        });
-    }
-
-    try {
-        const content = await scrapeContent(url, parseInt(timeout || '30000', 10));
-        res.send(content);
-    } catch (error) {
-        res.status(500).json({
-            error: 'Ошибка при скрапинге',
-            message: error.message
-        });
-    }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', port: PORT });
-});
-
-app.get('/', (req, res) => {
-    const logData = {
-        method: req.method,
-        url: req.originalUrl,
-        ip: req.ip,
-        headers: req.headers,
-        rawHeaders: req.rawHeaders,
-        query: req.query,
-        params: req.params,
-        body: req.body,
-    };
-
-    console.log('Incoming request to / ->');
-    try {
-        console.log(JSON.stringify(logData, null, 2));
-    } catch (err) {
-        // Fallback if circular structures exist
-        console.log(logData);
-    }
-
-    res.json({ status: 'running' });
-});
-
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Playwright scraper сервер запущен на порту ${PORT}`);
     console.log(`Endpoints:`);
-    console.log(`  GET  /scrape?url=<URL>&timeout=<ms>`);
-    console.log(`  GET  /health`);
+    console.log(`  GET  /?url=<URL>&timeout=<ms>`);
 });
