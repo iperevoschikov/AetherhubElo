@@ -70,6 +70,10 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', port: PORT });
 });
 
+app.get('/', (req, res) => {
+  res.json({status: 'running'})
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Playwright scraper сервер запущен на порту ${PORT}`);
     console.log(`Endpoints:`);
