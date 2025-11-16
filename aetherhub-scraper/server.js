@@ -2,7 +2,7 @@ import express, { json } from 'express';
 import { chromium } from 'playwright';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 app.use(json());
 
@@ -44,7 +44,6 @@ async function scrapeContent(url, timeout = 30000) {
     }
 }
 
-// GET endpoint - принимает URL как query параметр
 app.get('/scrape', async (req, res) => {
     const { url, timeout } = req.query;
 
