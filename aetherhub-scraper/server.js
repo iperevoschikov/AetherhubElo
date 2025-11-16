@@ -71,7 +71,26 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.json({status: 'running'})
+    const logData = {
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+        headers: req.headers,
+        rawHeaders: req.rawHeaders,
+        query: req.query,
+        params: req.params,
+        body: req.body,
+    };
+
+    console.log('Incoming request to / ->');
+    try {
+        console.log(JSON.stringify(logData, null, 2));
+    } catch (err) {
+        // Fallback if circular structures exist
+        console.log(logData);
+    }
+
+    res.json({ status: 'running' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
