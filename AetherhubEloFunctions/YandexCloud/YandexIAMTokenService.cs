@@ -16,32 +16,13 @@ public class YandexIAMTokenService(
     {
         try
         {
-            var content = new StringContent(
-                JsonSerializer.Serialize(new
-                {
-                    jwt = CreateJwtToken(options.Value.ServiceAccountId, options.Value.KeyId, options.Value.PrivateKey)
-                }),
-                Encoding.UTF8,
-                "application/json");
-
-            var client = httpClientFactory.CreateClient();
-            var response = await client.PostAsync(
-                "https://iam.api.cloud.yandex.net/iam/v1/tokens",
-                content
-            );
-
-            response.EnsureSuccessStatusCode();
-
-            var responseBody = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<JsonElement>(responseBody);
-
-            var iamToken = result.GetProperty("iamToken").GetString();
-            var expiresAt = result.GetProperty("expiresAt").GetString();
+            string iamToken = options.Value.ExternalObtaining
+            ? await ObtainExternal()
+            : await ObtainInternal();
 
             logger.LogDebug($"IAM-токен получен успешно!");
-            logger.LogDebug("Срок действия до: {expiresAt}", expiresAt);
 
-            return iamToken!;
+            return iamToken;
         }
         catch (Exception ex)
         {
@@ -50,16 +31,50 @@ public class YandexIAMTokenService(
         }
     }
 
+    private async Task<string> ObtainInternal()
+    {
+        var client = httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("Metadata-Flavor", "Google");
+        var response = await client.GetAsync("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    private async Task<string> ObtainExternal()
+    {
+        var content = new StringContent(
+            JsonSerializer.Serialize(new
+            {
+                jwt = CreateJwtToken(options.Value.ServiceAccountId, options.Value.KeyId, options.Value.PrivateKey)
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+        var client = httpClientFactory.CreateClient();
+        var response = await client.PostAsync(
+            "https://iam.api.cloud.yandex.net/iam/v1/tokens",
+            content
+        );
+
+        response.EnsureSuccessStatusCode();
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<JsonElement>(responseBody);
+
+        var iamToken = result.GetProperty("iamToken").GetString();
+        return iamToken!;
+    }
+
     private static string CreateJwtToken(string serviceAccountId, string keyId, string privateKey)
     {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            var headers = new Dictionary<string, object>()
+        var headers = new Dictionary<string, object>()
             {
                 { "kid", keyId }
             };
 
-            var payload = new Dictionary<string, object>()
+        var payload = new Dictionary<string, object>()
             {
                 { "aud", "https://iam.api.cloud.yandex.net/iam/v1/tokens" },
                 { "iss", serviceAccountId },

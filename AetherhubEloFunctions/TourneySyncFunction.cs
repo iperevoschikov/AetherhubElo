@@ -46,9 +46,7 @@ public class TourneySyncFunction() : MessageQueueFunctionHandler(HandleAsync)
     {
         serviceCollection
             .ConfigureStorage()
-            .AddSingleton<AetherhubTourneysFetcher>()
-            .AddSingleton<CommunixGuesser>()
-            .AddHttpClient();
+            .ConfigureAetherhub();
     }
 }
 
