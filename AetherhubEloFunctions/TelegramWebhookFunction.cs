@@ -162,6 +162,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                 var (_, Rounds) = await AetherhubTourneyParser.ParseTourney(
                                     recent.ExternalId
                                 );
+                                logger.LogInformation("Rounds is: {json}", JsonSerializer.Serialize(Rounds));
                                 var lastRound = Rounds.LastOrDefault();
                                 if (lastRound != null)
                                 {
