@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using Jose;
+using System.Text.Json.Serialization;
 
 namespace AetherhubEloFunctions.YandexCloud;
 
@@ -34,13 +35,18 @@ public class YandexIAMTokenService(
 
     private async Task<string> ObtainInternal()
     {
-        logger.LogInformation("Token obtained from context: {json}", context.TokenJson);
-        return context.TokenJson;
+        return JsonSerializer.Deserialize<Token>(context.TokenJson)!.AccessToken;
         var client = httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Add("Metadata-Flavor", "Google");
         var response = await client.GetAsync("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token");
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync();
+    }
+
+    private class Token
+    {
+        [JsonPropertyName("access_token")]
+        public string AccessToken {get;set;}
     }
 
     private async Task<string> ObtainExternal()
