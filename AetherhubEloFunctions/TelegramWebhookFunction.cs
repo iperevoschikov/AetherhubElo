@@ -165,6 +165,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                                 var lastRound = Rounds.LastOrDefault();
                                 if (lastRound != null)
                                 {
+                                    logger.LogInformation("Games count in last round: {count}", lastRound.Games.Length);
                                     await Respond(
                                         string.Join(
                                             '\n',
