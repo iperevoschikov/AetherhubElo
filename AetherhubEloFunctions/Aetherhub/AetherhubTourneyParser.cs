@@ -45,7 +45,7 @@ public static partial class AetherhubTourneyParser
                 games.Add(new Game(player1, result[0], player2, result[1]));
             }
 
-            rounds.Add(new Round(games.ToArray()));
+            rounds.Add(new Round([.. games]));
         }
 
         return (date, rounds.ToArray());
