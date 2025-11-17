@@ -10,18 +10,18 @@ public class AetherhubTourneyParserTests
     public void TestTourneyIdParsing(string url, bool succeed, int expected)
     {
         var result = AetherhubTourneyParser.TryParseAetherhubTourneyIdFromUrl(url, out var tourneyId);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Is.EqualTo(succeed));
             Assert.That(tourneyId, Is.EqualTo(expected));
-        });
+        }
     }
 
     [Test]
     public async Task TestTourneyParsing()
     {
         var (date, rounds) = await AetherhubTourneyParser.ParseTourney(38072);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(date, Is.EqualTo(new DateOnly(2025, 03, 25)));
             Assert.That(rounds, Has.Length.EqualTo(3));
@@ -30,6 +30,6 @@ public class AetherhubTourneyParserTests
             Assert.That(rounds[1].Games[5].Player1WinCount, Is.EqualTo(2));
             Assert.That(rounds[1].Games[5].Player2, Is.EqualTo("Новиков Дмитрий"));
             Assert.That(rounds[1].Games[5].Player2WinCount, Is.EqualTo(1));
-        });
+        }
     }
 }

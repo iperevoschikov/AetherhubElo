@@ -1,3 +1,8 @@
 namespace AetherhubEloFunctions.YandexCloud;
 
-public record YandexIAMTokenServiceOptions(string ServiceAccountId, string KeyId, string PrivateKey);
+public class YandexIAMTokenServiceOptions
+{
+    public string ServiceAccountId { get; set; }
+    public string KeyId { get; set; }
+    public string PrivateKey { get; set; }
+}
