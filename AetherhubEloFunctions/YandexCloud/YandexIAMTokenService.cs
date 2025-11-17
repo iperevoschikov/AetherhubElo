@@ -10,6 +10,7 @@ namespace AetherhubEloFunctions.YandexCloud;
 public class YandexIAMTokenService(
     IHttpClientFactory httpClientFactory,
     ILogger<YandexIAMTokenService> logger,
+    Yandex.Cloud.Functions.Context context,
     IOptions<YandexIAMTokenServiceOptions> options)
 {
     public async Task<string> GetIamTokenFromServiceAccountAsync()
@@ -33,6 +34,8 @@ public class YandexIAMTokenService(
 
     private async Task<string> ObtainInternal()
     {
+        logger.LogInformation("Token obtained from context: {json}", context.TokenJson);
+        return context.TokenJson;
         var client = httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Add("Metadata-Flavor", "Google");
         var response = await client.GetAsync("http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token");
