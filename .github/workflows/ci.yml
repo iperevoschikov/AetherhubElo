@@ -11,7 +11,7 @@ jobs:
     with:
       yc-bucket-name: "mtg-aetherhub-elo-sources"
       yc-folder-id: "b1ghjemjicrojm2tmnfc"
-      yc-service-account-id: "aje8bq8bpjcvkf9k73jp"
+      yc-service-account-id: "ajehthnvvf1et4hphmb5"
       yc-function-id: "d4e7olk0agsrmnl5jfkf"
       yc-function-entrypoint: "AetherhubEloFunctions.TelegramWebhookFunction"
       dotnet-project-name: "AetherhubEloFunctions"
@@ -26,7 +26,7 @@ jobs:
     with:
       yc-bucket-name: "mtg-aetherhub-elo-sources"
       yc-folder-id: "b1ghjemjicrojm2tmnfc"
-      yc-service-account-id: "aje8bq8bpjcvkf9k73jp"
+      yc-service-account-id: "ajehthnvvf1et4hphmb5"
       yc-function-id: "d4e7lfmm57prsa8bho3a"
       yc-function-entrypoint: "AetherhubEloFunctions.TourneySyncFunction"
       dotnet-project-name: "AetherhubEloFunctions"
