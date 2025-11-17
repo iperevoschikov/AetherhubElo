@@ -1,4 +1,5 @@
-﻿using AetherhubEloFunctions.Aetherhub;
+﻿using System.Text.Json;
+using AetherhubEloFunctions.Aetherhub;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Telegram.Bot;
@@ -21,10 +22,15 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
         ILogger<TelegramWebhookFunction> logger
     )
     {
-        var update = System.Text.Json.JsonSerializer.Deserialize<Update>(request.body)!;
+        var update = JsonSerializer.Deserialize<Update>(
+            request.body,
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            })!;
         logger.LogInformation(
             "Received update {update}",
-            System.Text.Json.JsonSerializer.Serialize(update)
+            JsonSerializer.Serialize(update)
         );
 
         var message = update.Message;
