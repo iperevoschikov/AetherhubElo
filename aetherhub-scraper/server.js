@@ -6,8 +6,8 @@ const PORT = process.env.PORT || 8080;
 
 app.use(json());
 
-async function scrapeContent(url, timeout = 30000) {
-    console.log(`Запуск скрапинга для URL: ${url}`);
+async function scrapeContent(url, locator, timeout = 30000) {
+    console.log(`Запуск скрапинга для URL: ${url}, locator: ${locator}, timeout: ${timeout}ms`);
 
     const browser = await chromium.launch({
         headless: true,
@@ -24,11 +24,8 @@ async function scrapeContent(url, timeout = 30000) {
         console.log('Переход на страницу...');
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
 
-        console.log('Ожидание селектора #Tourneys...');
-        await page.waitForSelector('#Tourneys', { timeout });
-
         console.log('Ожидание загрузки списка турниров...');
-        await page.locator('#Tourneys tr').nth(19).waitFor({ timeout });
+        await page.locator('#Tourneys tr:nth-child(19)').waitFor({ timeout });
 
         console.log('Селектор найден! Получение контента...');
         const content = await page.content();
@@ -44,17 +41,17 @@ async function scrapeContent(url, timeout = 30000) {
 }
 
 app.get('/', async (req, res) => {
-    const { url, timeout } = req.query;
+    const { url, locator, timeout } = req.query;
 
     if (!url) {
         return res.status(400).json({
             error: 'URL параметр обязателен',
-            usage: '/?url=https://example.com&timeout=30000'
+            usage: '/?url=https://example.com&timeout=30000&locator=#selector'
         });
     }
 
     try {
-        const content = await scrapeContent(url, parseInt(timeout || '30000', 10));
+        const content = await scrapeContent(url, locator, parseInt(timeout || '30000', 10));
         res.send(content);
     } catch (error) {
         res.status(500).json({
@@ -67,5 +64,5 @@ app.get('/', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Playwright scraper сервер запущен на порту ${PORT}`);
     console.log(`Endpoints:`);
-    console.log(`  GET  /?url=<URL>&timeout=<ms>`);
+    console.log(`  GET  /?url=<URL>&timeout=<ms>&locator=<CSS Selector>`);
 });
