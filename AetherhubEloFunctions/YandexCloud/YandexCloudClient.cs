@@ -6,11 +6,11 @@ namespace AetherhubEloFunctions.YandexCloud;
 public class YandexCloudClient(
     ILogger<YandexCloudClient> logger,
     IHttpClientFactory httpClientFactory,
-    YandexIAMTokenService tokenService)
+    IYandexIAMTokenProvider tokenProvider)
 {
     public async Task<string> InvokeServerlessContainer(string requestUri)
     {
-        var token = await tokenService.GetIamTokenFromServiceAccountAsync();
+        var token = await tokenProvider.GetToken();
         var client = httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

@@ -1,4 +1,5 @@
 ﻿using AetherhubEloFunctions.Aetherhub;
+using AetherhubEloFunctions.Tests.YandexCloud;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AetherhubEloFunctions.Tests;
@@ -12,14 +13,18 @@ public class AetherhubTourneysFetcherTests
             .AddLogging()
             .AddHttpClient()
             .AddSingleton<AetherhubTourneysFetcher>()
+            .ConfigureYandexCloud()
             .BuildServiceProvider();
 
         var fetcher = provider.GetRequiredService<AetherhubTourneysFetcher>();
         var result = await fetcher.FetchRecentTourneys().ToArrayAsync();
         Assert.That(result, Has.Length.EqualTo(20));
         var latest = result[0];
-        Assert.That(latest.Name, Is.Not.Null.Or.Empty);
-        Assert.That(latest.Date, Is.GreaterThan(new DateOnly(2025, 1, 1)));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(latest.Name, Is.Not.Null.Or.Empty);
+            Assert.That(latest.Date, Is.GreaterThan(new DateOnly(2025, 1, 1)));
+        }
     }
 }
 

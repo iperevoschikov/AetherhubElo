@@ -10,6 +10,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="jose-jwt" Version="5.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
         <PackageReference Include="coverlet.collector" Version="6.0.4" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="NUnit" Version="4.4.0" />
@@ -27,6 +29,9 @@
 
     <ItemGroup>
         <None Update="tourneys-list.html">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="YandexCloud\yandex-cloud-settings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

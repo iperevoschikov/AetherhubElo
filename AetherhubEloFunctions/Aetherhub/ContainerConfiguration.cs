@@ -10,11 +10,7 @@ public static class ContainerConfiguration
         return services
                     .AddSingleton<AetherhubTourneysFetcher>()
                     .AddSingleton<YandexCloudClient>()
-                    .AddSingleton<YandexIAMTokenService>()
-                    .Configure<YandexIAMTokenServiceOptions>(b =>
-                    {
-                        b.ExternalObtaining = false;
-                    })
+                    .AddSingleton<IYandexIAMTokenProvider, YandexInternalIAMTokenProvider>()
                     .AddSingleton<CommunixGuesser>()
                     .AddHttpClient();
     }
