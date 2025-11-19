@@ -8,7 +8,7 @@ public class AetherhubRendererContainerClient(YandexCloudClient yandexCloudClien
 
     public async Task<string> Render(string url, string locator)
     {
-        var aetherhubRendererUri = $"{containerUrl}?url={url}&locator={locator}";
+        var aetherhubRendererUri = $"{containerUrl}?url={Uri.EscapeDataString(url)}&locator={Uri.EscapeDataString(locator)}";
         var html = await yandexCloudClient.InvokeServerlessContainer(aetherhubRendererUri);
         return html;
     }

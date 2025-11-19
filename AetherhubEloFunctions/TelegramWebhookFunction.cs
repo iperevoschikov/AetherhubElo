@@ -18,7 +18,8 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
         CommunixesStorage communixesStorage,
         UsersStorage usersStorage,
         TourneysStorage tourneysStorage,
-        AetherhubTourneysFetcher tourneysFetcher,
+        AetherhubTourneysListFetcher tourneysFetcher,
+        AetherhubTourneyFetcher tourneyFetcher,
         ILogger<TelegramWebhookFunction> logger
     )
     {
@@ -159,7 +160,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                             if (recent != null)
                             {
                                 logger.LogInformation("Last tournament is {id}", recent.ExternalId);
-                                var (_, Rounds) = await AetherhubTourneyParser.ParseTourney(
+                                var (_, Rounds) = await tourneyFetcher.FetchTourney(
                                     recent.ExternalId
                                 );
                                 logger.LogInformation("Rounds is: {json}", JsonSerializer.Serialize(Rounds));
@@ -224,7 +225,7 @@ public class TelegramWebhookFunction() : WebhookFunctionHandler(HandleAsync)
                             else
                             {
                                 var (date, rounds) =
-                                    await AetherhubTourneyParser.ParseTourney(tourneyId);
+                                    await tourneyFetcher.FetchTourney(tourneyId);
                                 await tourneysStorage.WriteTourney(
                                     new Tourney(
                                         Guid.NewGuid(),

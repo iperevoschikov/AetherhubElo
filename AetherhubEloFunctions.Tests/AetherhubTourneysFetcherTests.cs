@@ -12,11 +12,11 @@ public class AetherhubTourneysFetcherTests
         var provider = new ServiceCollection()
             .AddLogging()
             .AddHttpClient()
-            .AddSingleton<AetherhubTourneysFetcher>()
+            .AddSingleton<AetherhubTourneysListFetcher>()
             .ConfigureYandexCloud()
             .BuildServiceProvider();
 
-        var fetcher = provider.GetRequiredService<AetherhubTourneysFetcher>();
+        var fetcher = provider.GetRequiredService<AetherhubTourneysListFetcher>();
         var result = await fetcher.FetchRecentTourneys().ToArrayAsync();
         Assert.That(result, Has.Length.EqualTo(20));
         var latest = result[0];

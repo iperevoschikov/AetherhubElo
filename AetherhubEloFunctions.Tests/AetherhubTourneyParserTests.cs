@@ -20,16 +20,12 @@ public class AetherhubTourneyParserTests
     [Test]
     public async Task TestTourneyParsing()
     {
-        var (date, rounds) = await AetherhubTourneyParser.ParseTourney(38072);
+        var html = await File.ReadAllTextAsync(Path.Combine(TestContext.CurrentContext.WorkDirectory, "tourney.html"));
+        var (date, rounds) = await AetherhubTourneyParser.ParseRounds(html);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(date, Is.EqualTo(new DateOnly(2025, 03, 25)));
             Assert.That(rounds, Has.Length.EqualTo(3));
-            Assert.That(rounds[1].Games, Has.Length.EqualTo(6));
-            Assert.That(rounds[1].Games[5].Player1, Is.EqualTo("Грабовец Леонид"));
-            Assert.That(rounds[1].Games[5].Player1WinCount, Is.EqualTo(2));
-            Assert.That(rounds[1].Games[5].Player2, Is.EqualTo("Новиков Дмитрий"));
-            Assert.That(rounds[1].Games[5].Player2WinCount, Is.EqualTo(1));
         }
     }
 }

@@ -8,20 +8,21 @@ namespace AetherhubEloFunctions;
 public class TourneySyncFunction() : MessageQueueFunctionHandler(HandleAsync)
 {
     private static async Task<string> HandleAsync(
-        AetherhubTourneysFetcher tourneysFetcher,
+        AetherhubTourneysListFetcher tourneysListFetcher,
+        AetherhubTourneyFetcher tourneyFetcher,
         TourneysStorage tourneysStorage,
         CommunixGuesser communixGuesser,
         ILogger<TourneySyncFunction> logger
     )
     {
         var tourneys = await tourneysStorage.GetTourneys().Select(t => t.AetherhubId).ToListAsync();
-        var recentTourneys = tourneysFetcher
+        var recentTourneys = tourneysListFetcher
             .FetchRecentTourneys()
             .Where(r => !tourneys.Contains(r.ExternalId));
 
         await foreach (var newTourney in recentTourneys)
         {
-            var (date, rounds) = await AetherhubTourneyParser.ParseTourney(newTourney.ExternalId);
+            var (date, rounds) = await tourneyFetcher.FetchTourney(newTourney.ExternalId);
             var communix = await communixGuesser.GuessCommunix(newTourney);
             if (communix != null)
             {

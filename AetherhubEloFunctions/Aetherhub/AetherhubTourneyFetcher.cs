@@ -1,6 +1,4 @@
-﻿using AetherhubEloFunctions.YandexCloud;
-
-namespace AetherhubEloFunctions.Aetherhub;
+﻿namespace AetherhubEloFunctions.Aetherhub;
 
 public class AetherhubTourneyFetcher(AetherhubRendererContainerClient rendererContainerClient)
 {
@@ -9,6 +7,17 @@ public class AetherhubTourneyFetcher(AetherhubRendererContainerClient rendererCo
         var html = await rendererContainerClient.Render(
             $"https://aetherhub.com/Tourney/{id}",
             "#matchList tbody tr:nth-child(1)");
-        return await AetherhubTourneyParser.ParseTourney(html);
+        var (date, roundLinks) = await AetherhubTourneyParser.ParseRounds(html);
+        var rounds = new List<Round>();
+        foreach (var link in roundLinks)
+        {
+            var roundHtml = await rendererContainerClient.Render(
+                $"https://aetherhub.com{link}",
+                "#matchList tbody tr:nth-child(1)"
+            );
+            var round = await AetherhubTourneyParser.ParseRound(roundHtml);
+            rounds.Add(round);
+        }
+        return (date, [.. rounds]);
     }
 }

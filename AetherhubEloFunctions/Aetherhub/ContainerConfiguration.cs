@@ -8,7 +8,9 @@ public static class ContainerConfiguration
     public static IServiceCollection ConfigureAetherhub(this IServiceCollection services)
     {
         return services
-                    .AddSingleton<AetherhubTourneysFetcher>()
+                    .AddSingleton<AetherhubTourneysListFetcher>()
+                    .AddSingleton<AetherhubTourneyFetcher>()
+                    .AddSingleton<AetherhubRendererContainerClient>()
                     .AddSingleton<YandexCloudClient>()
                     .AddSingleton<IYandexIAMTokenProvider, YandexInternalIAMTokenProvider>()
                     .AddSingleton<CommunixGuesser>()
