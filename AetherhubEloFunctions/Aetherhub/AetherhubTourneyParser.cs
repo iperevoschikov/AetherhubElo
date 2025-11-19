@@ -8,14 +8,10 @@ namespace AetherhubEloFunctions.Aetherhub;
 
 public static partial class AetherhubTourneyParser
 {
-    public static async Task<(DateOnly Date, Round[] Rounds)> ParseTourney(int tourneyId)
+    public static async Task<(DateOnly Date, Round[] Rounds)> ParseTourney(string html)
     {
-        var baseAddress = new Url("https://aetherhub.com/");
-        var url = new Url(baseAddress, $"/Tourney/RoundTourney/{tourneyId}");
-        var browsingContext = BrowsingContext.New(AngleSharp.Configuration.Default
-            .WithDefaultLoader()
-            .With(new DefaultHttpRequester("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36")));
-        var document = await browsingContext.OpenAsync(url);
+        var browsingContext = BrowsingContext.New(AngleSharp.Configuration.Default);
+        var document = await browsingContext.OpenAsync(req => req.OpenAsync(html));
         var title = document.QuerySelector("title");
 
         if (!DateOnly.TryParse(title?.TextContent.Trim().Split(" - ").LastOrDefault(), out var date))

@@ -2,14 +2,13 @@
 
 namespace AetherhubEloFunctions.Aetherhub;
 
-public class AetherhubTourneyFetcher(AetherhubRendererContainerClient containerClient)
+public class AetherhubTourneyFetcher(AetherhubRendererContainerClient rendererContainerClient)
 {
-    public async IAsyncEnumerable<TourneyMeta> FetchTourney(int id)
+    public async Task<(DateOnly Date, Round[] Rounds)> FetchTourney(int id)
     {
-        var aetherhubRendererUri =
-            "https://bbavmv503kd9ksfsd3c5.containers.yandexcloud.net/?url=https://aetherhub.com/Tourney/?search=EDINOROG_EKB";
-        var html = await containerClient.Render().InvokeServerlessContainer(aetherhubRendererUri);
-        await foreach (var meta in AetherhubTourneysListParser.Parse(html))
-            yield return meta;
+        var html = await rendererContainerClient.Render(
+            $"https://aetherhub.com/Tourney/{id}",
+            "#matchList tbody tr:nth-child(1)");
+        return await AetherhubTourneyParser.ParseTourney(html);
     }
 }
