@@ -5,7 +5,7 @@ public class AetherhubTourneyFetcher(AetherhubRendererContainerClient rendererCo
     public async Task<(DateOnly Date, Round[] Rounds)> FetchTourney(int id)
     {
         var html = await rendererContainerClient.Render(
-            $"https://aetherhub.com/Tourney/{id}",
+            $"https://aetherhub.com/Tourney/RoundTourney/{id}",
             "#matchList tbody tr:nth-child(1)");
         var (date, roundLinks) = await AetherhubTourneyParser.ParseRounds(html);
         var rounds = new List<Round>();
