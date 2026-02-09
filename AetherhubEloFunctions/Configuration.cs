@@ -1,4 +1,5 @@
-﻿using Google.Cloud.Firestore;
+﻿using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AetherhubEloFunctions;
@@ -17,20 +18,25 @@ public static class Configuration
 
     public static IServiceCollection ConfigureStorage(this IServiceCollection services)
     {
-        var googleCloudJsonCredentials =
-            System.Text.Encoding.UTF8.GetString(
-                Convert.FromBase64String(
-                    GetConfigurationValue("GOOGLE_CLOUD_JSON_CREDENTIALS")));
+        var googleCloudJsonCredentials = System.Text.Encoding.UTF8.GetString(
+            Convert.FromBase64String(GetConfigurationValue("GOOGLE_CLOUD_JSON_CREDENTIALS"))
+        );
+
+        var credentials = CredentialFactory
+            .FromJson<ServiceAccountCredential>(googleCloudJsonCredentials)
+            .ToGoogleCredential();
 
         return services
             .AddSingleton(
                 new FirestoreDbBuilder
                 {
                     ProjectId = "mtg-ekb-elo",
-                    JsonCredentials = googleCloudJsonCredentials,
-                }.Build())
+                    GoogleCredential = credentials,
+                }.Build()
+            )
             .AddSingleton<CommunixesStorage>()
             .AddSingleton<UsersStorage>()
             .AddSingleton<TourneysStorage>();
     }
 }
+
